@@ -36,8 +36,11 @@ func RotaCriarTarefa(w http.ResponseWriter, r *http.Request) {
 	if !DecodificaJSON(w, r, &novaTarefa) {
 		return
 	}
-
-	service.CriaTarefa(novaTarefa)
+	err := service.CriaTarefa(novaTarefa)
+	if err != nil {
+		http.Error(w, "Erro ao adicionar tarefa", http.StatusInternalServerError)
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)   // => Retorna para o usuario um status 201 dizendo que a tarefa foi criada com sucesso.
 	json.NewEncoder(w).Encode(novaTarefa)    // => Envia para o usuario o JSON da tarefa criada.
@@ -53,6 +56,7 @@ func RotaListaTarefa( w http.ResponseWriter, r * http.Request) {
 	err := json.NewEncoder(w).Encode(listaDeTarefas)
 	if err != nil {
 		http.Error(w, "Erro ao codificar JSON", http.StatusInternalServerError)
+		return
 	}
 }
 
@@ -65,9 +69,13 @@ func RotaAtualizaTarefa(w http.ResponseWriter, r *http.Request) {
 	if !DecodificaJSON(w, r, &tarefaAtualizada) {
 		return
 	}
-	ok := service.AtualizaTarefa(tarefaAtualizada)
-	if !ok {															// => Verifica se a tarefa que o usuario deseja atualizar realmente existe.
-		http.Error(w, "Tarefa não encontrada.", http.StatusNotFound)
+	if tarefaAtualizada.Id == 0 {
+		http.Error(w, "Id invalido para atualização.", http.StatusBadRequest)
+		return
+	}
+	err := service.AtualizaTarefa(tarefaAtualizada)
+	if err != nil {
+		http.Error(w, "Erro ao atualizar tarefa", http.StatusInternalServerError)
 		return
 	}
 
@@ -85,17 +93,17 @@ func RotaDeletaTarefa(w http.ResponseWriter, r *http.Request) {
 	if !DecodificaJSON(w, r, &tarefaParaExcluir) {
 		return
 	}
-	ok := service.DeletaTarefa(tarefaParaExcluir.Id)
-	if !ok {
-		http.Error(w, "Tarefa não encontrada para ser excluída", http.StatusNotFound)
+	err := service.DeletaTarefa(int(tarefaParaExcluir.Id))
+	if err != nil {
+		http.Error(w, "Erro ao excluir tarefa", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	listaDeTarefas := service.ListarTarefas()
-	err2 := json.NewEncoder(w).Encode(listaDeTarefas)
-	if err2 != nil {
+	err = json.NewEncoder(w).Encode(listaDeTarefas)
+	if err != nil {
 		http.Error(w, "Erro ao codificar JSON", http.StatusInternalServerError)
 	}
 }

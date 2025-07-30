@@ -1,7 +1,7 @@
 package model
 
 type Tarefa struct {
-	Nome      string
-	Id        int
-	Concluido bool
+	Titulo    string `json:"titulo"`
+	Id        int64  `json:"id"`
+	Concluida bool   `json:"concluida"`
 }
